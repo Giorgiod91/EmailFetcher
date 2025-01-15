@@ -4,6 +4,7 @@ import os
 import argparse
 import email 
 import csv
+from email.header import decode_header
 
 # Load environment variables from .env file
 load_dotenv()
@@ -13,7 +14,7 @@ imap_host = "imap.gmx.net"
 imap_user = os.getenv("mail")
 imap_pass = os.getenv("pw")
 
-data = ["Email ID", "Subject", "From"]
+data = ["Email ID", "Subject", "From", "Importance"]
 csv_file = "emails.csv"
 
 def add_data_to_cv():
@@ -26,6 +27,20 @@ def add_data_to_cv():
             writer.writerows(data)
             print(f"dataset: {csv_file} was created")
 
+# delete data function if needed (should not be accesable to the user later on )
+
+def delete_csv():
+    if os.path.exists(csv_file):
+        os.remove(csv_file)
+        print(f"csv file {csv_file} delete succesfull !")
+
+
+# boilerplate Function to decode MIME-encoded subjects
+def decode_mime_subject(encoded_subject):
+    decoded_subject, encoding = decode_header(encoded_subject)[0]
+    if isinstance(decoded_subject, bytes):
+        decoded_subject = decoded_subject.decode(encoding if encoding else 'utf-8')
+    return decoded_subject
 
 # filter function 1 for importany 0 for not important
 
@@ -37,11 +52,14 @@ def binary_filter(email_id, email_subject, email_from):
         print(f"Email ID: {email_id} | Subject: {email_subject} | From: {email_from} is important.")
     else:
         print(f"Email ID: {email_id} | Subject: {email_subject} | From: {email_from} is not important.")
+
+    decoded_subject = decode_mime_subject(email_subject)
+    clean_email_from = email_from.replace("From: ", "").strip()
     
     # Add email to CSV with its importance
     with open(csv_file, mode="a", newline="") as file:
         writer = csv.writer(file)
-        writer.writerow([email_id, email_subject, email_from, important])
+        writer.writerow([email_id, decoded_subject, clean_email_from, important])
 
 
 # Function to connect to the mail server and retrieve emails
@@ -170,6 +188,9 @@ def main():
         fetch_first_ten_mails()
     elif args.command == "dataset":
         add_data_to_cv()
+
+    elif args.command == "del":
+        delete_csv()
     
 
    
