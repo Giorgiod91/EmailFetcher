@@ -5,8 +5,11 @@
 - python script
 - will add mroe features soon
 
-
 ## Goals ##
+- use machine learning to categorize  emails to now if there is an important email and so on 
+
+
+## Personal Goals ##
 - get more knowledge in python
 - explore libraries
 - implementd learned stuff into real world programs
