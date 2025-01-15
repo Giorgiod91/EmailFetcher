@@ -6,6 +6,12 @@ import email
 import csv
 from email.header import decode_header
 import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import classification_report, accuracy_score
+from scipy.sparse import hstack
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 # Load environment variables from .env file
 load_dotenv()
@@ -18,6 +24,7 @@ imap_pass = os.getenv("pw")
 
 data = ["Email ID", "Subject", "From", "Importance"]
 csv_file = "emails.csv"
+
 
 
 
@@ -104,15 +111,18 @@ def fetch_specific():
     status, email_ids = imap.search(None, "ALL")
     if status == "OK":
         email_ids = email_ids[0].split()
-        for email_id in email_ids[-50:]:  # Get last 10 emails
+        for email_id in email_ids[-450:]:  # Get last 10 emails
             status, email_data = imap.fetch(email_id, "(BODY[HEADER.FIELDS (SUBJECT FROM)])")
             if status == "OK":
                 email_subject = email_data[0][1].decode()
                 email_from = email_data[0][1].decode().split("From: ")[1].split("\r\n")[0]
-                if "linkedin" in email_from.lower():
-                    print(f"Email ID: {email_id} | Subject: {email_subject} | From: {email_from}")
-                    binary_filter(email_id, email_subject, email_from, list_1, list_2, list_3, list_4)
-                    emails.append(email_id)
+                emails.append(email_id)
+                binary_filter(email_id, email_subject, email_from, list_1, list_2, list_3, list_4)
+
+               # if "linkedin" in email_from.lower():
+                #    print(f"Email ID: {email_id} | Subject: {email_subject} | From: {email_from}")
+                 #   binary_filter(email_id, email_subject, email_from, list_1, list_2, list_3, list_4)
+                  #  emails.append(email_id)
 
 
     
@@ -126,7 +136,7 @@ def fetch_specific():
    
     imap.logout()
     add_data_to_cv(list_1, list_2, list_3, list_4)
-    return emails
+    return list_1, list_2, list_3, list_4,emails
 
 def fetch_first_ten_mails():
     # array to save emails to later use them in other function
@@ -188,6 +198,48 @@ def show(emails):
 
     imap.logout()
 
+# get data for model training 
+list_1, list_2, list_3, list_4, emails = fetch_specific()
+x_training = [list_1, list_2, list_3] # x features (Email ID, Subject, From)
+y_training = list_4 # importance should be my y in this case the models need to predict if its important mail or not
+
+#logistic regression
+
+def train():
+
+    
+    df = pd.DataFrame({
+    "Subject": list_2,
+    "From": list_3,
+    "Importance": list_4
+    })
+    # vectorize text data
+    # transforming text data into numerical features 
+    vectorizer_subject = TfidfVectorizer(stop_words='english')
+    X_subject = vectorizer_subject.fit_transform(df["Subject"])
+
+    vectorizer_from = TfidfVectorizer(stop_words="english")
+    X_from = vectorizer_from.fit_transform(df["From"])
+
+    #combine both c features
+    X_combined = hstack([X_subject, X_from])
+    # define target value y
+    y = df["Importance"]
+
+    X_train, X_test, y_train, y_test = train_test_split(X_combined, y, test_size=0.2, random_state=42)
+
+    model = LogisticRegression(C=0.1, class_weight='balanced')
+    model.fit(X_train,y_train)
+
+    predictions = model.predict(X_test)
+
+    # boilerplate print statements
+    print("Accuracy: ", accuracy_score(y_test, predictions))
+    print("Classification Report:\n", classification_report(y_test, predictions))
+
+
+
+
 
 
 def main():
@@ -214,6 +266,9 @@ def main():
 
     elif args.command == "del":
         delete_csv()
+
+    elif args.command == "train":
+        train()
     
 
    
