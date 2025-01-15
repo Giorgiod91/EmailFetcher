@@ -19,12 +19,29 @@ csv_file = "emails.csv"
 def add_data_to_cv():
     if os.path.exists(csv_file):
         print(f"file allready exist")
+        
     else:
         with open(csv_file, mode="w", newline="")as file:
             writer = csv.writer(file)
             writer.writerows(data)
             print(f"dataset: {csv_file} was created")
 
+
+# filter function 1 for importany 0 for not important
+
+def binary_filter(email_id, email_subject, email_from):
+    # for practise now if the email contains linkedin it will be markes as 1 (important)
+    important = 0
+    if "linkedin" in email_from.lower():
+        important = 1
+        print(f"Email ID: {email_id} | Subject: {email_subject} | From: {email_from} is important.")
+    else:
+        print(f"Email ID: {email_id} | Subject: {email_subject} | From: {email_from} is not important.")
+    
+    # Add email to CSV with its importance
+    with open(csv_file, mode="a", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow([email_id, email_subject, email_from, important])
 
 
 # Function to connect to the mail server and retrieve emails
@@ -54,6 +71,7 @@ def fetch_specific():
                 email_from = email_data[0][1].decode().split("From: ")[1].split("\r\n")[0]
                 if "linkedin" in email_from.lower():
                     print(f"Email ID: {email_id} | Subject: {email_subject} | From: {email_from}")
+                    binary_filter(email_id, email_subject, email_from)
                     emails.append(email_id)
 
 
