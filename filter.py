@@ -12,6 +12,10 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report, accuracy_score
 from scipy.sparse import hstack
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics import confusion_matrix, precision_recall_curve, roc_curve, auc
+import joblib
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 # Load environment variables from .env file
 load_dotenv()
@@ -62,7 +66,7 @@ def decode_mime_subject(encoded_subject):
 def binary_filter(email_id, email_subject, email_from, list_1, list_2, list_3, list_4):
     # for practise now if the email contains linkedin it will be markes as 1 (important)
     important = 0
-    if "linkedin" in email_from.lower():
+    if "linkedin" in email_from.lower() or "grover" in email_from.lower() or "xing" in email_from.lower() or "indeed" in email_from.lower():
         important = 1
         print(f"Email ID: {email_id} | Subject: {email_subject} | From: {email_from} is important.")
     else:
@@ -178,6 +182,11 @@ def fetch_first_ten_mails():
     imap.logout()
     return emails
 
+def check_how_many_important():
+    importance_counts = pd.Series(list_4).value_counts()
+    print("Importance distribution:")
+    print(importance_counts)
+
 
 def show(emails):
     
@@ -238,7 +247,16 @@ def train():
     print("Classification Report:\n", classification_report(y_test, predictions))
 
 
+    # Save the trained model and vectorizers
+    joblib.dump(model, 'model.pkl')
+    joblib.dump(vectorizer_subject, 'vectorizer_subject.pkl')
+    joblib.dump(vectorizer_from, 'vectorizer_from.pkl')
 
+
+
+
+
+   
 
 
 
@@ -269,6 +287,8 @@ def main():
 
     elif args.command == "train":
         train()
+    elif args.command == "important":
+        check_how_many_important()
     
 
    
