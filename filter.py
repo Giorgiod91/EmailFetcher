@@ -5,6 +5,7 @@ import argparse
 import email 
 import csv
 from email.header import decode_header
+import pandas as pd
 
 # Load environment variables from .env file
 load_dotenv()
@@ -14,18 +15,25 @@ imap_host = "imap.gmx.net"
 imap_user = os.getenv("mail")
 imap_pass = os.getenv("pw")
 
+
 data = ["Email ID", "Subject", "From", "Importance"]
 csv_file = "emails.csv"
 
-def add_data_to_cv():
+
+
+
+
+def add_data_to_cv(list_1, list_2, list_3, list_4):
+
+    
+    df = pd.DataFrame(data={"Email ID": list_1, "Subject": list_2, "From": list_3, "Importance": list_4})
+
     if os.path.exists(csv_file):
-        print(f"file allready exist")
-        
+        df.to_csv(csv_file, mode='a', header=False, index=False)
+        print(f"Appended to {csv_file}")
     else:
-        with open(csv_file, mode="w", newline="")as file:
-            writer = csv.writer(file)
-            writer.writerows(data)
-            print(f"dataset: {csv_file} was created")
+        df.to_csv(csv_file, index=False)
+        print(f"Created new CSV file: {csv_file}")
 
 # delete data function if needed (should not be accesable to the user later on )
 
@@ -35,7 +43,7 @@ def delete_csv():
         print(f"csv file {csv_file} delete succesfull !")
 
 
-# boilerplate Function to decode MIME-encoded subjects
+# boilerplate Function to decode 
 def decode_mime_subject(encoded_subject):
     decoded_subject, encoding = decode_header(encoded_subject)[0]
     if isinstance(decoded_subject, bytes):
@@ -44,7 +52,7 @@ def decode_mime_subject(encoded_subject):
 
 # filter function 1 for importany 0 for not important
 
-def binary_filter(email_id, email_subject, email_from):
+def binary_filter(email_id, email_subject, email_from, list_1, list_2, list_3, list_4):
     # for practise now if the email contains linkedin it will be markes as 1 (important)
     important = 0
     if "linkedin" in email_from.lower():
@@ -55,6 +63,11 @@ def binary_filter(email_id, email_subject, email_from):
 
     decoded_subject = decode_mime_subject(email_subject)
     clean_email_from = email_from.replace("From: ", "").strip()
+
+    list_1.append(email_id)  # Email ID
+    list_2.append(decoded_subject)  # Subject
+    list_3.append(clean_email_from)  # From
+    list_4.append(important)  # Importance
     
     # Add email to CSV with its importance
     with open(csv_file, mode="a", newline="") as file:
@@ -78,18 +91,27 @@ def fetch_specific():
     status, folders = imap.list()
     print(folders)
 
+
+    #appending list items to add those into the csv file
+    list_1 = []
+    list_2 = []
+    list_3 = []
+    list_4 = []  # Importance (1 or 0)
+
+
+
     # Fetch all email IDs
     status, email_ids = imap.search(None, "ALL")
     if status == "OK":
         email_ids = email_ids[0].split()
-        for email_id in email_ids[-10:]:  # Get last 10 emails
+        for email_id in email_ids[-50:]:  # Get last 10 emails
             status, email_data = imap.fetch(email_id, "(BODY[HEADER.FIELDS (SUBJECT FROM)])")
             if status == "OK":
                 email_subject = email_data[0][1].decode()
                 email_from = email_data[0][1].decode().split("From: ")[1].split("\r\n")[0]
                 if "linkedin" in email_from.lower():
                     print(f"Email ID: {email_id} | Subject: {email_subject} | From: {email_from}")
-                    binary_filter(email_id, email_subject, email_from)
+                    binary_filter(email_id, email_subject, email_from, list_1, list_2, list_3, list_4)
                     emails.append(email_id)
 
 
@@ -103,6 +125,7 @@ def fetch_specific():
     
    
     imap.logout()
+    add_data_to_cv(list_1, list_2, list_3, list_4)
     return emails
 
 def fetch_first_ten_mails():
