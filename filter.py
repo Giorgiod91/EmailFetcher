@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 import os
 import argparse
 import email 
+import csv
 
 # Load environment variables from .env file
 load_dotenv()
@@ -11,6 +12,18 @@ load_dotenv()
 imap_host = "imap.gmx.net"
 imap_user = os.getenv("mail")
 imap_pass = os.getenv("pw")
+
+data = ["Email ID", "Subject", "From"]
+csv_file = "emails.csv"
+
+def add_data_to_cv():
+    if os.path.exists(csv_file):
+        print(f"file allready exist")
+    else:
+        with open(csv_file, mode="w", newline="")as file:
+            writer = csv.writer(file)
+            writer.writerows(data)
+            print(f"dataset: {csv_file} was created")
 
 
 
@@ -137,6 +150,8 @@ def main():
 
     elif args.command == "all":
         fetch_first_ten_mails()
+    elif args.command == "dataset":
+        add_data_to_cv()
     
 
    
